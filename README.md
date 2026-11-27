@@ -21,19 +21,31 @@ capture what you need with one click, and get a ready-to-paste report with the d
   *Copy + save as TXT* puts the report on the clipboard and keeps a copy in the run folder.
 - **Nothing leaves your PC.** No account, no telemetry, no network access except adb to your phone.
 
-## Requirements
+## Download
 
-- Windows with [Python 3](https://www.python.org/downloads/) (tkinter is included in the standard installer)
-- [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools) –
-  `adb` on your PATH, or unpacked to `C:\platform-tools`
-- On the phone: *Developer options → USB debugging* (and *Wireless debugging* for Wi-Fi)
+Get `Buggie.exe` from the [Releases](https://github.com/Liofree/Buggie/releases) page and start it.
+No installation, no Python needed.
 
-## Start
+Buggie needs `adb` from the Android SDK Platform-Tools. If it can't find it (on your PATH or in
+`C:\platform-tools`), it offers to download the official package from Google (about 7 MB)
+into `%APPDATA%\Buggie`. You can also install
+[Platform-Tools](https://developer.android.com/tools/releases/platform-tools) yourself.
 
-Download or clone this repository and double-click `buggie.bat` (or `buggie.pyw`).
-No installation, no dependencies beyond the Python standard library.
+On the phone: *Developer options → USB debugging* (and *Wireless debugging* for Wi-Fi).
 
-The last wireless address is remembered in `%APPDATA%\Buggie`.
+## Run from source
+
+Requires Windows and [Python 3](https://www.python.org/downloads/) (tkinter is part of the standard installer).
+Double-click `buggie.bat` (or `buggie.pyw`). Standard library only.
+
+Build the exe yourself:
+
+```
+pip install pyinstaller
+pyinstaller --onefile --windowed --name Buggie buggie.pyw
+```
+
+The last wireless address and the downloaded Platform-Tools are kept in `%APPDATA%\Buggie`.
 
 ## Support
 

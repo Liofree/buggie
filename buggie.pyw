@@ -1,16 +1,37 @@
 """Buggie: logcat, screenshot, screen recording and a bug report template for manual Android testing.
 Standard library only. Start: double-click buggie.pyw or buggie.bat."""
-import os, re, shutil, subprocess, time, webbrowser, tkinter as tk
-from tkinter import ttk
+import io, os, re, shutil, subprocess, time, urllib.request, webbrowser, zipfile, tkinter as tk
+from tkinter import messagebox, ttk
 from datetime import datetime
 
 NAME = "Buggie"
-ADB = shutil.which("adb") or r"C:\platform-tools\adb.exe"
 RUNS_DIR = os.path.join(os.path.expanduser("~"), "Documents", f"{NAME} runs")
 CONFIG_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), NAME)
 WIFI_FILE = os.path.join(CONFIG_DIR, "last_wifi_address.txt")
 NOWIN = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 DEVICE_VIDEO = "/sdcard/buggie_rec.mp4"
+TOOLS_URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
+OWN_ADB = os.path.join(CONFIG_DIR, "platform-tools", "adb.exe")
+
+
+def find_adb():
+    for a in (shutil.which("adb"), OWN_ADB, r"C:\platform-tools\adb.exe"):
+        if a and os.path.isfile(a):
+            return a
+    return OWN_ADB
+
+
+ADB = find_adb()
+
+
+def download_tools():
+    """Official Android SDK Platform-Tools from Google into %APPDATA%\\Buggie\\platform-tools."""
+    global ADB
+    with urllib.request.urlopen(TOOLS_URL, timeout=120) as r:
+        data = r.read()
+    zipfile.ZipFile(io.BytesIO(data)).extractall(CONFIG_DIR)  # the zip holds the folder platform-tools/
+    ADB = find_adb()
+    return os.path.isfile(ADB)
 
 
 def adb(*args, binary=False, timeout=30):
@@ -24,7 +45,7 @@ def stamp():
 
 class App:
     def __init__(self, root):
-        self.root, self.video, self.info = root, None, {}
+        self.root, self.video, self.info, self.asked = root, None, {}, False
         self.paths = {"Log": "", "Screenshot": "", "Video": ""}
         root.title(NAME)
         self.status = tk.Label(root, anchor="w", font=("Segoe UI", 10, "bold"))
@@ -93,8 +114,8 @@ class App:
         self.status.config(text=text, fg="red" if error else "dark green")
 
     def ready(self):
-        if not os.path.isfile(ADB):
-            self.message(f"adb not found (PATH or {ADB}). Install Android SDK Platform-Tools.", True)
+        if not os.path.isfile(ADB) and not self.offer_download():
+            self.message("adb not found. Install Android SDK Platform-Tools, or restart Buggie to download them.", True)
             return False
         try:
             if adb("get-state", timeout=5) != "device":
@@ -105,10 +126,25 @@ class App:
             return False
         return True
 
+    def offer_download(self):
+        """Ask once per start; the window waits during the few seconds of the download."""
+        if self.asked:
+            return False
+        self.asked = True
+        if not messagebox.askyesno(NAME, "adb (Android SDK Platform-Tools) was not found.\n\n"
+                                   "Download it now from Google (about 7 MB)?"):
+            return False
+        self.message("Downloading Platform-Tools …"); self.root.update()
+        try:
+            return download_tools()
+        except Exception as e:
+            messagebox.showerror(NAME, f"Download failed: {e}")
+            return False
+
     def reconnect(self):
         """Restart the adb server, detect the device again, re-read the info."""
-        if not os.path.isfile(ADB):
-            return self.ready()
+        if not os.path.isfile(ADB) and not self.ready():
+            return
         self.message("Reconnecting …"); self.root.update()
         os.environ.pop("ANDROID_SERIAL", None)  # allow the cable again
         adb("kill-server", timeout=10)
