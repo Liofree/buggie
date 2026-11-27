@@ -19,7 +19,7 @@ capture what you need with one click, and get a ready-to-paste report with the d
   *Fill in device info* updates the device lines without touching your text,
   *Suggest title* builds a title from the actual result and the last step,
   *Copy + save as TXT* puts the report on the clipboard and keeps a copy in the run folder.
-- **Nothing leaves your PC.** No account, no telemetry, no network access except adb to your phone.
+- **Nothing leaves your PC.** No account, no telemetry, no network access except adb to your phone and, only if you agree, the one-time Platform-Tools download from Google.
 
 ## Download
 
